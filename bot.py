@@ -89,24 +89,28 @@ def safe_decode(text):
 
 async def fetch_mac_by_uid(uid):
     try:
+        uid = int(uid)
         async with aiomysql.connect(**db_config) as connect:
             async with connect.cursor() as cursor:
                 await cursor.execute("SELECT mac, user, fio, address FROM users WHERE uid = %s", (uid,))
                 result = await cursor.fetchone()
                 if result:
-                    mac, fio, user, address = result
+                    mac, user, fio, address = result
                     logging.info(f"UID: {uid}, MAC: {mac}, User: {user}, FIO: {fio}, Address: {address}")
                     return {
-                        'mac':mac,
-                        'user':user,
-                        'fio':fio,
-                        'address':address
+                        'mac': mac,
+                        'user': user,
+                        'fio': fio,
+                        'address': address
                     }
                 else:
-                    logging.warning(f"UID {uid} не знайдений или MAC порожній.")
+                    logging.warning(f"UID {uid} не знайдений або MAC порожній.")
                     return None
+    except ValueError:
+        logging.error(f"UID має бути числовим значенням. Отримано: {uid}")
+        return None
     except Exception as error:
-        logging.error(f"Помилка при отриманні uid {uid}: {error}")
+        logging.error(f"Помилка при отриманні UID {uid}: {error}")
         return None
 
 @dp.message(CommandStart())
@@ -154,6 +158,9 @@ async def sn_input(message: types.Message, state: FSMContext):
 @dp.message(Search.uid)
 async def search_uid(message: types.Message, state: FSMContext):
     uid = message.text.strip()
+    if not uid.isdigit():
+        await message.reply("UID має бути числом.", reply_markup=search_uid_keyboard)
+        return
     logging.info(f'User input UID: {uid}')
     user_data = await fetch_mac_by_uid(uid)
 
