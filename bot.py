@@ -1,5 +1,4 @@
 import asyncio
-import aiohttp
 import requests
 import aiomysql
 from aiogram import Bot, Dispatcher, types
